@@ -1,0 +1,588 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crypto Sniper Enhanced</title>
+  <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiQ3J5cHRvIFNuaXBlciIsInNob3J0X25hbWUiOiJDcnlwdG9TbmlwZXIiLCJzdGFydF91cmwiOiIuLyIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxMTExMTEiLCJ0aGVtZV9jb2xvciI6IiMyMjIyMjIiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sO2Jhc2U2NCxQSE4yWnlCM2FXUjBhRDBpTVRJNElpQm9aV2xuYUhROUlqRXlPQ0lpSUhacFpYZENiM2c5SWpBZ01DQXhNamdnTVRJNElpQm1hV3hzUFNJak16TXpJaUI0Yld4dWN6MGlhSFIwY0RvdkwzZDNkeTUzTXk1dmNtY3ZNakF3TUM5emRtY2lQZ284Y21WamRDQjNhV1IwYUQwaU1USTRMQ0FnSUdObGRtbDBhRDBpTVMwd0lHRmpiaTB6SWlCbWFXeHNQU0lqTWpJeUlpOCtQSFJsZUhRZ2VEMGlOalFpSUhrOUlqWTBJaUJtYVd4c1BTSWpSa1pHSWlCbWIyNTBMWE5wZW1VOUlqSTBJaUJtYjI1MExXWmhiV2xzZVQwaWJXOXViM053WVdObElpQjBaWGgwTFdGdVkyaHZjajBpYldsa1pHeGxJajQ4TDJSbFpuTStQQzl6ZG1jKyIsInNpemVzIjoiMTI4eDEyOCIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
+  <meta name="theme-color" content="#222222">
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      background: #111; 
+      color: #eee; 
+      padding: 10px; 
+      margin: 0;
+    }
+    h1 { text-align: center; }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+      align-items: center;
+    }
+    select, button { 
+      margin: 5px; 
+      padding: 8px 12px; 
+      background: #333;
+      color: #eee;
+      border: 1px solid #555;
+      border-radius: 4px;
+    }
+    button {
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #444;
+    }
+    .coin { 
+      padding: 15px; 
+      margin-bottom: 10px; 
+      background: linear-gradient(135deg, #222, #333); 
+      border-radius: 8px; 
+      cursor: pointer; 
+      border-left: 4px solid #00ff88;
+      transition: transform 0.2s;
+    }
+    .coin.bybit {
+      border-left-color: #f7931a;
+    }
+    .coin.binance {
+      border-left-color: #f3ba2f;
+    }
+    .coin:hover {
+      transform: translateX(5px);
+    }
+    .gain { 
+      color: #00ff88; 
+      font-weight: bold; 
+      font-size: 1.2em;
+    }
+    .exchange-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    .exchange-badge.bybit {
+      background: #f7931a;
+      color: #000;
+    }
+    .exchange-badge.binance {
+      background: #f3ba2f;
+      color: #000;
+    }
+    .chart { 
+      margin-top: 15px; 
+      display: none; 
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .status {
+      background: #333;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+    .status.active {
+      background: linear-gradient(90deg, #00ff88, #00cc66);
+      color: #000;
+    }
+    .tradingview-link {
+      display: inline-block;
+      background: #1e88e5;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 12px;
+      margin-top: 8px;
+      transition: background 0.3s;
+    }
+    .tradingview-link:hover {
+      background: #1976d2;
+    }
+    .screenshot-note {
+      background: #444;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      margin-top: 8px;
+      color: #aaa;
+    }
+    .spam-filter-info {
+      background: #2a2a2a;
+      padding: 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-top: 8px;
+      color: #888;
+      border-left: 3px solid #ff6b6b;
+    }
+    @media (max-width: 768px) {
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      select, button {
+        width: 100%;
+        margin: 5px 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>📈 Crypto Sniper Enhanced</h1>
+  
+  <div class="status" id="status">
+    🔄 Inizializzazione...
+  </div>
+  
+  <div class="controls">
+    <label for="timeframe">Timeframe:</label>
+    <select id="timeframe">
+      <option value="1m">1 Min</option>
+      <option value="5m" selected>5 Min</option>
+      <option value="30m">30 Min</option>
+      <option value="1h">1 Ora</option>
+      <option value="4h">4 Ore</option>
+      <option value="1d">1 Giorno</option>
+      <option value="1w">1 Settimana</option>
+      <option value="1M">1 Mese</option>
+    </select>
+    <button onclick="loadSniper()">🔄 Ricarica Manuale</button>
+    <label><input type="checkbox" id="autoRefresh" checked> Auto Refresh</label>
+    <button onclick="requestWakeLock()">🔒 Mantieni Attivo</button>
+    <button onclick="clearSpamFilter()">🗑️ Reset Filtro Spam</button>
+  </div>
+  
+  <div id="results"></div>
+
+  <script>
+    const TELEGRAM_TOKEN = "7919987275:AAGeKy3A-ZtmYm4RZRDEb7MVz6JrOxx95Lc";
+    const TELEGRAM_CHAT_ID = "525164223";
+    let intervalId = null;
+    let wakeLock = null;
+    let isRunning = false;
+
+    // Anti-spam system - memorizza coin già segnalate
+    let sentAlerts = new Map(); // symbol -> timestamp dell'ultimo invio
+
+    // Service Worker Registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('data:application/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJywgZXZlbnQgPT4gewogIGNvbnNvbGUubG9nKCdTZXJ2aWNlIFdvcmtlciBpbnN0YWxsZWQnKTsKfSk7CgpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2FjdGl2YXRlJywgZXZlbnQgPT4gewogIGNvbnNvbGUubG9nKCdTZXJ2aWNlIFdvcmtlciBhY3RpdmF0ZWQnKTsKfSk7')
+        .then(registration => console.log('SW registered'))
+        .catch(error => console.log('SW registration failed'));
+    }
+
+    // Sistema anti-spam
+    function canSendAlert(symbol) {
+      const now = Date.now();
+      const lastSent = sentAlerts.get(symbol);
+      const fourHoursInMs = 4 * 60 * 60 * 1000; // 4 ore in millisecondi
+      
+      if (!lastSent || (now - lastSent) > fourHoursInMs) {
+        sentAlerts.set(symbol, now);
+        return true;
+      }
+      return false;
+    }
+
+    function clearSpamFilter() {
+      sentAlerts.clear();
+      updateStatus('🗑️ Filtro spam resettato - tutti gli alert saranno nuovamente inviati');
+      setTimeout(() => updateStatus('✅ Sistema pronto'), 2000);
+    }
+
+    function getTimeUntilNextAlert(symbol) {
+      const lastSent = sentAlerts.get(symbol);
+      if (!lastSent) return null;
+      
+      const now = Date.now();
+      const fourHoursInMs = 4 * 60 * 60 * 1000;
+      const timeLeft = fourHoursInMs - (now - lastSent);
+      
+      if (timeLeft > 0) {
+        const hours = Math.floor(timeLeft / (60 * 60 * 1000));
+        const minutes = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+        return `${hours}h ${minutes}m`;
+      }
+      return null;
+    }
+
+    // Alternative al Wake Lock per dispositivi non supportati
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+          updateStatus('🔒 Wake Lock attivo - schermo mantenuto acceso');
+          console.log('Wake lock attivo');
+        } else {
+          startKeepAliveTimer();
+          updateStatus('🔄 Keep-alive attivato (compatibilità)');
+        }
+      } catch (err) {
+        console.error('Errore wake lock:', err);
+        startKeepAliveTimer();
+        updateStatus('🔄 Keep-alive attivato (fallback)');
+      }
+    }
+
+    function startKeepAliveTimer() {
+      setInterval(() => {
+        const dummy = Date.now();
+        console.log('Keep-alive tick:', new Date().toLocaleTimeString());
+      }, 30000);
+    }
+
+    function initAudioKeepAlive() {
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+        gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+        oscillator.frequency.setValueAtTime(20000, audioContext.currentTime);
+        oscillator.start();
+        
+        console.log('Audio keep-alive inizializzato');
+        return true;
+      } catch (err) {
+        console.error('Audio keep-alive fallito:', err);
+        return false;
+      }
+    }
+
+    function updateStatus(message) {
+      const statusEl = document.getElementById('status');
+      statusEl.textContent = message;
+      statusEl.className = isRunning ? 'status active' : 'status';
+    }
+
+    // BINANCE - Solo coppie USDC
+    async function getBinanceSymbols() {
+      const res = await fetch("https://api.binance.com/api/v3/exchangeInfo");
+      const data = await res.json();
+      return data.symbols.filter(s => s.symbol.endsWith("USDC") && s.status === "TRADING").map(s => s.symbol);
+    }
+
+    // BYBIT - Coppie USDT spot
+    async function getBybitSymbols() {
+      try {
+        const res = await fetch("https://api.bybit.com/v5/market/instruments-info?category=spot");
+        const data = await res.json();
+        
+        if (data.retCode === 0 && data.result && data.result.list) {
+          return data.result.list
+            .filter(s => s.symbol.endsWith("USDT") && s.status === "Trading")
+            .map(s => s.symbol);
+        }
+        return [];
+      } catch (error) {
+        console.error('Errore nel recupero simboli Bybit:', error);
+        return [];
+      }
+    }
+
+    function getTradingViewInterval(binanceInterval) {
+      const intervalMap = {
+        '1m': '1',
+        '5m': '5',
+        '15m': '15',
+        '30m': '30',
+        '1h': '60',
+        '4h': '240',
+        '1d': '1D',
+        '1w': '1W',
+        '1M': '1M'
+      };
+      return intervalMap[binanceInterval] || '5';
+    }
+
+    function createTradingViewUrl(symbol, interval, exchange = 'BINANCE') {
+      const tvInterval = getTradingViewInterval(interval);
+      return `https://www.tradingview.com/chart/?symbol=${exchange}:${symbol}&interval=${tvInterval}`;
+    }
+
+    // Conversione intervalli per Bybit
+    function getBybitInterval(interval) {
+      const intervalMap = {
+        '1m': '1',
+        '5m': '5',
+        '15m': '15',
+        '30m': '30',
+        '1h': '60',
+        '4h': '240',
+        '1d': 'D',
+        '1w': 'W',
+        '1M': 'M'
+      };
+      return intervalMap[interval] || '5';
+    }
+
+    // BINANCE - Analisi candele USDC
+    async function getBinanceMaxGain(symbol, tf) {
+      try {
+        const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${tf}&limit=6`);
+        const data = await res.json();
+        if (!data || data.length < 6) return null;
+
+        let maxGain = -Infinity;
+        let bestCandle = null;
+
+        for (let i = 1; i <= 5; i++) {
+          const open = parseFloat(data[i][1]);
+          const close = parseFloat(data[i][4]);
+          const gain = ((close - open) / open) * 100;
+          if (gain > maxGain) {
+            maxGain = gain;
+            bestCandle = {
+              symbol,
+              exchange: 'binance',
+              gain: gain.toFixed(2),
+              open,
+              close,
+              index: i,
+              timestamp: new Date(data[i][0]).toLocaleTimeString(),
+              tradingViewUrl: createTradingViewUrl(symbol, tf, 'BINANCE')
+            };
+          }
+        }
+
+        if (maxGain >= 3) {
+          if (canSendAlert(symbol)) {
+            sendTelegramAlert(bestCandle, tf);
+          }
+          return bestCandle;
+        } else {
+          return null;
+        }
+      } catch (e) {
+        console.error('Errore Binance per', symbol, ':', e);
+        return null;
+      }
+    }
+
+    // BYBIT - Analisi candele USDT
+    async function getBybitMaxGain(symbol, tf) {
+      try {
+        const bybitInterval = getBybitInterval(tf);
+        const res = await fetch(`https://api.bybit.com/v5/market/kline?category=spot&symbol=${symbol}&interval=${bybitInterval}&limit=6`);
+        const data = await res.json();
+        
+        if (data.retCode !== 0 || !data.result || !data.result.list || data.result.list.length < 6) {
+          return null;
+        }
+
+        let maxGain = -Infinity;
+        let bestCandle = null;
+
+        // Bybit restituisce i dati in ordine decrescente per timestamp
+        const klines = data.result.list.reverse(); // Inverti per avere ordine crescente
+
+        for (let i = 1; i <= 5; i++) {
+          const open = parseFloat(klines[i][1]);
+          const close = parseFloat(klines[i][4]);
+          const gain = ((close - open) / open) * 100;
+          if (gain > maxGain) {
+            maxGain = gain;
+            bestCandle = {
+              symbol,
+              exchange: 'bybit',
+              gain: gain.toFixed(2),
+              open,
+              close,
+              index: i,
+              timestamp: new Date(parseInt(klines[i][0])).toLocaleTimeString(),
+              tradingViewUrl: createTradingViewUrl(symbol, tf, 'BYBIT')
+            };
+          }
+        }
+
+        if (maxGain >= 3) {
+          if (canSendAlert(`BYBIT_${symbol}`)) {
+            sendTelegramAlert(bestCandle, tf);
+          }
+          return bestCandle;
+        } else {
+          return null;
+        }
+      } catch (e) {
+        console.error('Errore Bybit per', symbol, ':', e);
+        return null;
+      }
+    }
+
+    async function sendTelegramAlert(data, tf) {
+      const exchangeIcon = data.exchange === 'bybit' ? '🟠' : '🟡';
+      const exchangeName = data.exchange === 'bybit' ? 'BYBIT' : 'BINANCE';
+      const quoteCurrency = data.exchange === 'bybit' ? 'USDT' : 'USDC';
+      
+      const message = `🚨 CRYPTO SNIPER ALERT 🚨\n\n${exchangeIcon} Exchange: ${exchangeName}\n🔸 Coin: ${data.symbol}\n💰 Quote: ${quoteCurrency}\n🔸 Timeframe: ${tf}\n🔸 Gain: ${data.gain}%\n🕒 Candela n° ${data.index + 1}\n🟢 Open: ${data.open}\n🔴 Close: ${data.close}\n⏰ Timestamp: ${data.timestamp}\n\n📊 TradingView: ${data.tradingViewUrl}\n\n💡 Suggerimento: Apri il link TradingView e fai uno screenshot manuale del grafico per analisi dettagliata.`;
+      
+      const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
+      
+      try {
+        await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            chat_id: TELEGRAM_CHAT_ID, 
+            text: message,
+            parse_mode: 'HTML',
+            disable_web_page_preview: false
+          })
+        });
+        console.log(`Alert inviato per ${exchangeName}:${data.symbol}`);
+      } catch (err) {
+        console.error('Errore invio Telegram:', err);
+      }
+    }
+
+    async function loadSniper() {
+      const tf = document.getElementById("timeframe").value;
+      const container = document.getElementById("results");
+      
+      isRunning = true;
+      updateStatus(`🔄 Scansione in corso... (${tf})`);
+      container.innerHTML = "⏳ Scansione mercato multi-exchange...";
+
+      try {
+        // Recupera simboli da entrambi gli exchange
+        const [binanceSymbols, bybitSymbols] = await Promise.all([
+          getBinanceSymbols(),
+          getBybitSymbols()
+        ]);
+
+        console.log(`Trovati ${binanceSymbols.length} simboli Binance USDC e ${bybitSymbols.length} simboli Bybit USDT`);
+
+        const results = [];
+        let processed = 0;
+        const totalSymbols = Math.min(binanceSymbols.length, 75) + Math.min(bybitSymbols.length, 75);
+
+        // Scansiona Binance (max 75 simboli)
+        for (const symbol of binanceSymbols.slice(0, 75)) {
+          const data = await getBinanceMaxGain(symbol, tf);
+          if (data) results.push(data);
+          
+          processed++;
+          if (processed % 20 === 0) {
+            updateStatus(`🔄 Processate ${processed}/${totalSymbols} coin...`);
+          }
+          
+          await new Promise(r => setTimeout(r, 60)); // Leggero delay
+        }
+
+        // Scansiona Bybit (max 75 simboli)
+        for (const symbol of bybitSymbols.slice(0, 75)) {
+          const data = await getBybitMaxGain(symbol, tf);
+          if (data) results.push(data);
+          
+          processed++;
+          if (processed % 20 === 0) {
+            updateStatus(`🔄 Processate ${processed}/${totalSymbols} coin...`);
+          }
+          
+          await new Promise(r => setTimeout(r, 100)); // Delay maggiore per Bybit
+        }
+
+        results.sort((a, b) => b.gain - a.gain);
+        container.innerHTML = "";
+
+        if (results.length === 0) {
+          container.innerHTML = '<div class="coin">📊 Nessuna coin con gain superiore al 3% trovata in questo momento</div>';
+          updateStatus('✅ Scansione completata - Nessun gain > 3%');
+        } else {
+          updateStatus(`✅ Trovate ${results.length} coin con gain > 3%!`);
+          
+          results.forEach(r => {
+            const el = document.createElement("div");
+            el.className = `coin ${r.exchange}`;
+            
+            // Controlla se è in spam filter
+            const alertKey = r.exchange === 'bybit' ? `BYBIT_${r.symbol}` : r.symbol;
+            const timeLeft = getTimeUntilNextAlert(alertKey);
+            const spamFilterInfo = timeLeft ? 
+              `<div class="spam-filter-info">⏳ Prossimo alert disponibile tra: ${timeLeft}</div>` : '';
+            
+            el.innerHTML = `
+              <div class="exchange-badge ${r.exchange}">${r.exchange.toUpperCase()}</div>
+              <div><strong>💰 ${r.symbol}</strong> ${r.exchange === 'bybit' ? '(USDT)' : '(USDC)'}</div>
+              <div>📊 Massimo Gain: <span class="gain">+${r.gain}%</span></div>
+              <div>🕒 Candela n° ${r.index + 1} | ⏰ ${r.timestamp}</div>
+              <div>🟢 Open: ${r.open} | 🔴 Close: ${r.close}</div>
+              <a href="${r.tradingViewUrl}" target="_blank" class="tradingview-link">📊 Apri TradingView</a>
+              <div class="screenshot-note">
+                💡 <strong>Per screenshot:</strong> Clicca il link TradingView sopra, attendi il caricamento del grafico, poi fai uno screenshot manuale del timeframe ${tf}.
+              </div>
+              ${spamFilterInfo}
+              <div class="chart" id="chart-${r.exchange}-${r.symbol}"></div>
+            `;
+            
+            el.addEventListener("click", (e) => {
+              if (e.target.tagName !== 'A') {
+                const chart = el.querySelector(".chart");
+                if (chart.innerHTML === "") {
+                  const exchangePrefix = r.exchange.toUpperCase();
+                  chart.innerHTML = `<iframe src='https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=${exchangePrefix}:${r.symbol}&width=100%25&height=200&locale=it&interval=${tf}&colorTheme=dark' width='100%' height='200' frameborder='0' allowtransparency='true' scrolling='no'></iframe>`;
+                }
+                chart.style.display = chart.style.display === "none" ? "block" : "none";
+              }
+            });
+            
+            container.appendChild(el);
+          });
+        }
+      } catch (error) {
+        console.error('Errore durante la scansione:', error);
+        updateStatus('❌ Errore durante la scansione');
+        container.innerHTML = '<div class="coin">❌ Errore durante la scansione del mercato</div>';
+      }
+      
+      isRunning = false;
+    }
+
+    // Event listeners
+    document.getElementById("timeframe").addEventListener("change", loadSniper);
+
+    document.getElementById("autoRefresh").addEventListener("change", function () {
+      if (this.checked) {
+        intervalId = setInterval(loadSniper, 60000);
+        updateStatus('🔄 Auto refresh attivato (60s)');
+      } else {
+        clearInterval(intervalId);
+        updateStatus('⏸️ Auto refresh disattivato');
+      }
+    });
+
+    // Gestione visibilità pagina
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        console.log('App in background');
+      } else {
+        console.log('App in foreground');
+        if (wakeLock === null) {
+          requestWakeLock();
+        }
+      }
+    });
+
+    // Avvio iniziale
+    loadSniper();
+    intervalId = setInterval(loadSniper, 60000);
+    updateStatus('🚀 Crypto Sniper Enhanced avviato');
+
+    setTimeout(() => {
+      requestWakeLock();
+      initAudioKeepAlive();
+    }, 2000);
+  </script>
+</body>
+</html>
