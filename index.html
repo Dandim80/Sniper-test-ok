@@ -101,11 +101,39 @@
       border-radius: 4px;
       text-decoration: none;
       font-size: 12px;
-      margin-top: 8px;
+      margin: 4px 8px 4px 0;
       transition: background 0.3s;
     }
     .tradingview-link:hover {
       background: #1976d2;
+    }
+    .exchange-link {
+      display: inline-block;
+      background: #4caf50;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-size: 12px;
+      margin: 4px 8px 4px 0;
+      transition: background 0.3s;
+    }
+    .exchange-link:hover {
+      background: #45a049;
+    }
+    .exchange-link.binance {
+      background: #f3ba2f;
+      color: #000;
+    }
+    .exchange-link.binance:hover {
+      background: #d4a027;
+    }
+    .exchange-link.bybit {
+      background: #f7931a;
+      color: #000;
+    }
+    .exchange-link.bybit:hover {
+      background: #d97e15;
     }
     .screenshot-note {
       background: #444;
@@ -308,7 +336,21 @@
 
     function createTradingViewUrl(symbol, interval, exchange = 'BINANCE') {
       const tvInterval = getTradingViewInterval(interval);
-      return `https://www.tradingview.com/chart/?symbol=${exchange}:${symbol}&interval=${tvInterval}`;
+      // Modalità standard TradingView (non embed)
+      return `https://www.tradingview.com/chart/?symbol=${exchange}:${symbol}&interval=${tvInterval}&theme=dark`;
+    }
+
+    // Link diretti agli exchange
+    function createExchangeUrl(symbol, exchange) {
+      if (exchange === 'binance') {
+        // Binance spot trading
+        const baseAsset = symbol.replace('USDC', '');
+        return `https://www.binance.com/en/trade/${baseAsset}_USDC`;
+      } else if (exchange === 'bybit') {
+        // Bybit spot trading
+        return `https://www.bybit.com/en/trade/spot/${symbol}`;
+      }
+      return '#';
     }
 
     // Conversione intervalli per Bybit
@@ -351,7 +393,8 @@
               close,
               index: i,
               timestamp: new Date(data[i][0]).toLocaleTimeString(),
-              tradingViewUrl: createTradingViewUrl(symbol, tf, 'BINANCE')
+              tradingViewUrl: createTradingViewUrl(symbol, tf, 'BINANCE'),
+              exchangeUrl: createExchangeUrl(symbol, 'binance')
             };
           }
         }
@@ -401,7 +444,8 @@
               close,
               index: i,
               timestamp: new Date(parseInt(klines[i][0])).toLocaleTimeString(),
-              tradingViewUrl: createTradingViewUrl(symbol, tf, 'BYBIT')
+              tradingViewUrl: createTradingViewUrl(symbol, tf, 'BYBIT'),
+              exchangeUrl: createExchangeUrl(symbol, 'bybit')
             };
           }
         }
@@ -425,7 +469,7 @@
       const exchangeName = data.exchange === 'bybit' ? 'BYBIT' : 'BINANCE';
       const quoteCurrency = data.exchange === 'bybit' ? 'USDT' : 'USDC';
       
-      const message = `🚨 CRYPTO SNIPER ALERT 🚨\n\n${exchangeIcon} Exchange: ${exchangeName}\n🔸 Coin: ${data.symbol}\n💰 Quote: ${quoteCurrency}\n🔸 Timeframe: ${tf}\n🔸 Gain: ${data.gain}%\n🕒 Candela n° ${data.index + 1}\n🟢 Open: ${data.open}\n🔴 Close: ${data.close}\n⏰ Timestamp: ${data.timestamp}\n\n📊 TradingView: ${data.tradingViewUrl}\n\n💡 Suggerimento: Apri il link TradingView e fai uno screenshot manuale del grafico per analisi dettagliata.`;
+      const message = `🚨 CRYPTO SNIPER ALERT 🚨\n\n${exchangeIcon} Exchange: ${exchangeName}\n🔸 Coin: ${data.symbol}\n💰 Quote: ${quoteCurrency}\n🔸 Timeframe: ${tf}\n🔸 Gain: ${data.gain}%\n🕒 Candela n° ${data.index + 1}\n🟢 Open: ${data.open}\n🔴 Close: ${data.close}\n⏰ Timestamp: ${data.timestamp}\n\n📊 TradingView: ${data.tradingViewUrl}\n🔗 ${exchangeName} Trading: ${data.exchangeUrl}\n\n💡 Suggerimento: TradingView si apre in modalità completa per analisi avanzata. Il link exchange ti porta direttamente al trading.`;
       
       const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
       
@@ -518,9 +562,14 @@
               <div>📊 Massimo Gain: <span class="gain">+${r.gain}%</span></div>
               <div>🕒 Candela n° ${r.index + 1} | ⏰ ${r.timestamp}</div>
               <div>🟢 Open: ${r.open} | 🔴 Close: ${r.close}</div>
-              <a href="${r.tradingViewUrl}" target="_blank" class="tradingview-link">📊 Apri TradingView</a>
+              <div style="margin-top: 10px;">
+                <a href="${r.tradingViewUrl}" target="_blank" class="tradingview-link">📊 TradingView</a>
+                <a href="${r.exchangeUrl}" target="_blank" class="exchange-link ${r.exchange}">
+                  🔗 ${r.exchange.toUpperCase()} Trading
+                </a>
+              </div>
               <div class="screenshot-note">
-                💡 <strong>Per screenshot:</strong> Clicca il link TradingView sopra, attendi il caricamento del grafico, poi fai uno screenshot manuale del timeframe ${tf}.
+                💡 <strong>Links:</strong> TradingView si apre in modalità completa per analisi avanzata. Il link exchange ti porta direttamente al trading della coppia.
               </div>
               ${spamFilterInfo}
               <div class="chart" id="chart-${r.exchange}-${r.symbol}"></div>
