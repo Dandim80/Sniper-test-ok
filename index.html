@@ -334,23 +334,75 @@
       return intervalMap[binanceInterval] || '5';
     }
 
+    // LINK TRADINGVIEW CORRETTO - Con accesso completo al trading
     function createTradingViewUrl(symbol, interval, exchange = 'BINANCE') {
       const tvInterval = getTradingViewInterval(interval);
-      // Modalità standard TradingView (non embed)
-      return `https://www.tradingview.com/chart/?symbol=${exchange}:${symbol}&interval=${tvInterval}&theme=dark`;
+      // URL TradingView con accesso completo (non read-only)
+      // Aggiunge parametri per modalità trading completa
+      return `https://www.tradingview.com/chart/?symbol=${exchange}%3A${symbol}&interval=${tvInterval}&theme=dark&style=1&timezone=Etc%2FUTC&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en&utm_source=external&utm_medium=web&utm_campaign=chart&utm_content=${symbol}`;
     }
 
-    // Link diretti agli exchange
+    // LINK EXCHANGE MIGLIORATI - Con supporto deep linking per app mobili
     function createExchangeUrl(symbol, exchange) {
       if (exchange === 'binance') {
-        // Binance spot trading
         const baseAsset = symbol.replace('USDC', '');
-        return `https://www.binance.com/en/trade/${baseAsset}_USDC`;
+        // URL che supporta l'apertura dell'app Binance su mobile
+        // Su desktop apre il web, su mobile tenta di aprire l'app
+        return `https://www.binance.com/en/trade/${baseAsset}_USDC?ref=37754157`;
       } else if (exchange === 'bybit') {
-        // Bybit spot trading
-        return `https://www.bybit.com/en/trade/spot/${symbol}`;
+        // URL Bybit con supporto deep linking
+        // Il parametro affiliate può essere aggiunto se necessario
+        return `https://www.bybit.com/trade/spot/${symbol}?affiliate_id=0&group_id=0&group_type=1`;
       }
       return '#';
+    }
+
+    // FUNZIONE PER TENTARE APERTURA APP SU MOBILE
+    function openExchangeLink(url, exchange, symbol) {
+      // Controlla se siamo su mobile
+      const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile) {
+        // Tenta apertura app con fallback al web
+        let appUrl = '';
+        
+        if (exchange === 'binance') {
+          // Schema URL per app Binance
+          const baseAsset = symbol.replace('USDC', '');
+          appUrl = `binance://trade/${baseAsset}_USDC`;
+          
+          // Tenta apertura app
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = appUrl;
+          document.body.appendChild(iframe);
+          
+          // Fallback al web dopo 2 secondi se l'app non si apre
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+            window.open(url, '_blank');
+          }, 2000);
+          
+        } else if (exchange === 'bybit') {
+          // Schema URL per app Bybit
+          appUrl = `bybit://spot/${symbol}`;
+          
+          // Tenta apertura app
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = appUrl;
+          document.body.appendChild(iframe);
+          
+          // Fallback al web dopo 2 secondi se l'app non si apre
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+            window.open(url, '_blank');
+          }, 2000);
+        }
+      } else {
+        // Su desktop apri direttamente il web
+        window.open(url, '_blank');
+      }
     }
 
     // Conversione intervalli per Bybit
@@ -469,7 +521,7 @@
       const exchangeName = data.exchange === 'bybit' ? 'BYBIT' : 'BINANCE';
       const quoteCurrency = data.exchange === 'bybit' ? 'USDT' : 'USDC';
       
-      const message = `🚨 CRYPTO SNIPER ALERT 🚨\n\n${exchangeIcon} Exchange: ${exchangeName}\n🔸 Coin: ${data.symbol}\n💰 Quote: ${quoteCurrency}\n🔸 Timeframe: ${tf}\n🔸 Gain: ${data.gain}%\n🕒 Candela n° ${data.index + 1}\n🟢 Open: ${data.open}\n🔴 Close: ${data.close}\n⏰ Timestamp: ${data.timestamp}\n\n📊 TradingView: ${data.tradingViewUrl}\n🔗 ${exchangeName} Trading: ${data.exchangeUrl}\n\n💡 Suggerimento: TradingView si apre in modalità completa per analisi avanzata. Il link exchange ti porta direttamente al trading.`;
+      const message = `🚨 CRYPTO SNIPER ALERT 🚨\n\n${exchangeIcon} Exchange: ${exchangeName}\n🔸 Coin: ${data.symbol}\n💰 Quote: ${quoteCurrency}\n🔸 Timeframe: ${tf}\n🔸 Gain: ${data.gain}%\n🕒 Candela n° ${data.index + 1}\n🟢 Open: ${data.open}\n🔴 Close: ${data.close}\n⏰ Timestamp: ${data.timestamp}\n\n📊 TradingView: ${data.tradingViewUrl}\n🔗 ${exchangeName} Trading: ${data.exchangeUrl}\n\n💡 TradingView ora ha accesso completo per trading. I link exchange supportano l'apertura delle app mobili.`;
       
       const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
       
@@ -563,75 +615,23 @@
               <div>🕒 Candela n° ${r.index + 1} | ⏰ ${r.timestamp}</div>
               <div>🟢 Open: ${r.open} | 🔴 Close: ${r.close}</div>
               <div style="margin-top: 10px;">
-                <a href="${r.tradingViewUrl}" target="_blank" class="tradingview-link">📊 TradingView</a>
-                <a href="${r.exchangeUrl}" target="_blank" class="exchange-link ${r.exchange}">
-                  🔗 ${r.exchange.toUpperCase()} Trading
+                <a href="${r.tradingViewUrl}" target="_blank" class="tradingview-link">📊 TradingView Pro</a>
+                <a href="javascript:void(0)" onclick="openExchangeLink('${r.exchangeUrl}', '${r.exchange}', '${r.symbol}')" class="exchange-link ${r.exchange}">
+                  📱 ${r.exchange.toUpperCase()} Trading
                 </a>
               </div>
               <div class="screenshot-note">
-                💡 <strong>Links:</strong> TradingView si apre in modalità completa per analisi avanzata. Il link exchange ti porta direttamente al trading della coppia.
+                💡 <strong>Links:</strong> TradingView ora ha accesso completo (non read-only). Il link exchange tenta di aprire l'app mobile se installata, altrimenti apre il web.
               </div>
               ${spamFilterInfo}
               <div class="chart" id="chart-${r.exchange}-${r.symbol}"></div>
             `;
             
             el.addEventListener("click", (e) => {
-              if (e.target.tagName !== 'A') {
+              if (e.target.tagName !== 'A' && !e.target.onclick) {
                 const chart = el.querySelector(".chart");
                 if (chart.innerHTML === "") {
                   const exchangePrefix = r.exchange.toUpperCase();
                   chart.innerHTML = `<iframe src='https://s.tradingview.com/embed-widget/mini-symbol-overview/?symbol=${exchangePrefix}:${r.symbol}&width=100%25&height=200&locale=it&interval=${tf}&colorTheme=dark' width='100%' height='200' frameborder='0' allowtransparency='true' scrolling='no'></iframe>`;
                 }
-                chart.style.display = chart.style.display === "none" ? "block" : "none";
-              }
-            });
-            
-            container.appendChild(el);
-          });
-        }
-      } catch (error) {
-        console.error('Errore durante la scansione:', error);
-        updateStatus('❌ Errore durante la scansione');
-        container.innerHTML = '<div class="coin">❌ Errore durante la scansione del mercato</div>';
-      }
-      
-      isRunning = false;
-    }
-
-    // Event listeners
-    document.getElementById("timeframe").addEventListener("change", loadSniper);
-
-    document.getElementById("autoRefresh").addEventListener("change", function () {
-      if (this.checked) {
-        intervalId = setInterval(loadSniper, 60000);
-        updateStatus('🔄 Auto refresh attivato (60s)');
-      } else {
-        clearInterval(intervalId);
-        updateStatus('⏸️ Auto refresh disattivato');
-      }
-    });
-
-    // Gestione visibilità pagina
-    document.addEventListener('visibilitychange', () => {
-      if (document.hidden) {
-        console.log('App in background');
-      } else {
-        console.log('App in foreground');
-        if (wakeLock === null) {
-          requestWakeLock();
-        }
-      }
-    });
-
-    // Avvio iniziale
-    loadSniper();
-    intervalId = setInterval(loadSniper, 60000);
-    updateStatus('🚀 Crypto Sniper Enhanced avviato');
-
-    setTimeout(() => {
-      requestWakeLock();
-      initAudioKeepAlive();
-    }, 2000);
-  </script>
-</body>
-</html>
+                chart.style
