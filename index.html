@@ -93,7 +93,7 @@
     <button onclick="clearSpamFilter()">🗑️ Reset Filtro Spam</button>
   </div>
   <div id="results"></div>
-
+  
   <script>
     // ---------------------- COSTANTI E VARIABILI GLOBALI ----------------------
     const TELEGRAM_TOKEN = "7919987275:AAGeKy3A-ZtmYm4RZRDEb7MVz6JrOxx95Lc";
@@ -180,7 +180,6 @@
     }
     
     // ---------------------- CALCOLO DEL PIVOT HIGH & EMA10 ----------------------
-    // La funzione computePivotHigh scorre dal fondo verso l'alto per prendere il pivot high più recente (parametri 1,1)
     function computePivotHigh(candles) {
       for (let i = candles.length - 2; i >= 1; i--) {
         let currentHighStr = candles[i][2];
@@ -195,7 +194,6 @@
       return { pivot: null, decimals: 0 };
     }
     
-    // Calcola l'EMA sui prezzi di chiusura
     function computeEMA(closes, period) {
       const k = 2 / (period + 1);
       let ema = closes[0];
@@ -236,16 +234,16 @@
         }
         return { deepLink: null, fallback: `https://www.binance.com/en/trade/${baseAsset}_USDC` };
       } else if (exchange.toLowerCase() === "bybit") {
+        // Per Bybit usiamo il simbolo completo per il fallback web (es. "ETHUSDT")
         if (symbol.endsWith("USDT")) {
           const baseAsset = symbol.slice(0, -4);
-          const pair = `${baseAsset}/USDT`;
           if (isMobile()) {
             return {
-              deepLink: `bybit://trade/spot/${pair}`,
-              fallback: `https://www.bybit.com/en/trade/spot/${pair}`
+              deepLink: `bybit://trade/spot/${baseAsset}/USDT`,
+              fallback: `https://www.bybit.com/en/trade/spot/${symbol}`
             };
           }
-          return { deepLink: null, fallback: `https://www.bybit.com/en/trade/spot/${pair}` };
+          return { deepLink: null, fallback: `https://www.bybit.com/en/trade/spot/${symbol}` };
         }
         return { deepLink: null, fallback: `https://www.bybit.com/en/trade/spot/${symbol}` };
       }
@@ -253,21 +251,18 @@
     }
     
     function launchApp(deepLink, fallback) {
-      // In questa versione usiamo il fallback, poiché i deep link potrebbero non essere supportati
       window.open(fallback, "_blank");
     }
     
     // ---------------------- ANALISI DELLE CANDELE SU BINANCE ----------------------
     async function getBinanceMaxGain(symbol, tf, threshold) {
       try {
-        // Richiede 20 candeline per avere dati sufficienti
         const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${tf}&limit=20`);
         const data = await res.json();
         if (!data || data.length < 20) {
           console.log(`Nessun dato per ${symbol} su Binance`);
           return null;
         }
-        // Per il calcolo del gain, usiamo le ultime 6 candeline
         let subset = data.slice(data.length - 6);
         let maxGain = -Infinity, bestIndex = -1;
         for (let i = 0; i < subset.length; i++) {
@@ -287,15 +282,12 @@
           index: bestIndex,
           timestamp: new Date(data[bestIndex][0]).toLocaleTimeString()
         };
-        // Calcola il Pivot High (1,1) scorrendo dal fondo verso l'alto
         let pivotObj = computePivotHigh(data);
         bestCandle.pivotHigh = (pivotObj.pivot !== null) ? pivotObj.pivot.toFixed(pivotObj.decimals) : "N/A";
-        // Calcola l'EMA a 10 periodi sui prezzi di chiusura
         let closes = data.map(c => parseFloat(c[4]));
         let ema10 = computeEMA(closes, 10);
         bestCandle.ema10Above = (closes[closes.length - 1] > ema10) ? "Sì" : "No";
         bestCandle.pivotAboveEMA10 = (pivotObj.pivot !== null && pivotObj.pivot > ema10) ? "Sì" : "No";
-        // Ottieni la variazione giornaliera (ticker 24hr)
         try {
           const infoRes = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
           const info = await infoRes.json();
@@ -323,7 +315,7 @@
           console.log(`Nessun dato per ${symbol} su Bybit`);
           return null;
         }
-        let data = dataJSON.result.list.reverse(); // Ordine cronologico
+        let data = dataJSON.result.list.reverse();
         let subset = data.slice(data.length - 6);
         let maxGain = -Infinity, bestIndex = -1;
         for (let i = 0; i < subset.length; i++) {
@@ -369,30 +361,25 @@
     }
     
     // ---------------------- INVIO MESSAGGIO TELEGRAM ----------------------
-    // Logica:
-    //  - Prepara un messaggio multilinea formattato con i dati del simbolo, gain, timeframe e link.
-    //  - Esegue una chiamata POST all'endpoint Telegram usando il token e l'ID chat.
-    //  - Il messaggio viene inviato solo se il filtro anti-spam (canSendAlert) lo permette.
+    // Il messaggio viene preparato in formato HTML con link cliccabili.
     async function sendTelegramAlert(data, tf) {
       const exchangeIcon = data.exchange === 'bybit' ? '🟠' : '🟡';
       const exchangeName = data.exchange === 'bybit' ? 'BYBIT' : 'BINANCE';
       const quoteCurrency = data.exchange === 'bybit' ? 'USDT' : 'USDC';
       
-      const message = `🚨 CRYPTO SNIPER ALERT 🚨
-
-${exchangeIcon} Exchange: ${exchangeName}
-🔸 Coin: ${data.symbol}
-💰 Quote: ${quoteCurrency}
-🔸 Timeframe: ${tf}
-🔸 Gain: ${data.gain}%
-📆 24h: ${data.dailyChange}%
-🕒 Candela n° ${data.index + 1}
-🟢 Open: ${data.open}
-🔴 Close: ${data.close}
-⏰ Timestamp: ${data.timestamp}
-
-📊 TradingView: ${data.tradingViewUrl}
-🔗 ${exchangeName} Trading: ${data.exchangeUrl}`;
+      const message = `<b>🚨 CRYPTO SNIPER ALERT 🚨</b><br/><br/>
+<b>${exchangeIcon} Exchange:</b> ${exchangeName}<br/>
+<b>🔸 Coin:</b> ${data.symbol}<br/>
+<b>💰 Quote:</b> ${quoteCurrency}<br/>
+<b>🔸 Timeframe:</b> ${tf}<br/>
+<b>🔸 Gain:</b> ${data.gain}%<br/>
+<b>📆 24h:</b> ${data.dailyChange}%<br/>
+<b>🕒 Candela n°:</b> ${data.index + 1}<br/>
+<b>🟢 Open:</b> ${data.open}<br/>
+<b>🔴 Close:</b> ${data.close}<br/>
+<b>⏰ Timestamp:</b> ${data.timestamp}<br/><br/>
+<b>📊 TradingView:</b> <a href="${data.tradingViewUrl}">Apri TradingView</a><br/><br/>
+<b>🔗 ${exchangeName} Trading:</b> <a href="${data.exchangeUrl}">Apri ${exchangeName} Trading</a>`;
       
       const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
       try {
