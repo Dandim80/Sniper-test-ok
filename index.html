@@ -361,7 +361,7 @@
     }
     
     // ---------------------- INVIO MESSAGGIO TELEGRAM ----------------------
-    // Utilizza la formattazione HTML per generare link cliccabili per TradingView ed Exchange.
+    // Il messaggio viene preparato in formato HTML e include due link separati da doppio <br/> per garantire che siano cliccabili.
     async function sendTelegramAlert(data, tf) {
       const exchangeIcon = data.exchange === 'bybit' ? '🟠' : '🟡';
       const exchangeName = data.exchange === 'bybit' ? 'BYBIT' : 'BINANCE';
@@ -378,13 +378,14 @@
 <b>🟢 Open:</b> ${data.open}<br/>
 <b>🔴 Close:</b> ${data.close}<br/>
 <b>⏰ Timestamp:</b> ${data.timestamp}<br/><br/>
-<b>📊 TradingView:</b> <a href="${data.tradingViewUrl}">Apri TradingView</a><br/>
+<b>📊 TradingView:</b> <a href="${data.tradingViewUrl}">Apri TradingView</a><br/><br/>
 <b>🔗 ${exchangeName} Trading:</b> <a href="${data.exchangeUrl}">Apri ${exchangeName} Trading</a>`;
       
       const url = `https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`;
       try {
         await fetch(url, { 
           method: "POST", 
+          mode: "no-cors",  // Modalità no-cors per bypassare eventuali restrizioni
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
              chat_id: TELEGRAM_CHAT_ID, 
